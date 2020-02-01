@@ -1,0 +1,14 @@
+body {
+ background-color: lightgrey;
+}
+
+.group {
+  width: 220px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.list {
+  height: 340px;
+  overflow: auto;
+}

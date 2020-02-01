@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Events</title>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta property="og:site_name" content="Events"/>
+    <meta property="og:description" content="List of events near you!"/>
+    <meta property="og:image" content="">
+    <meta property="og:url" content="">
+    <meta property="og:type" content="website"/>
+
+    <!-- Bootstrap core -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Website -->
+    <link rel="stylesheet" href="style.css">
+
+  </head>
+  <body>
+
+    <div class="container-fluid">
+      <div class="form-group group" style="margin-top: 125px;">
+        <label for="zipcode">Please enter your zip code for listed events!</label>
+        <input id="zipcode" type="text" class="form-control" aria-describedby="zipcodeHelp" placeholder="Enter zipcode" pattern="^[0-9]$">
+        <small id="zipcodeHelp" class="form-text text-muted">We'll never share your zipcode with anyone else.</small>
+      </div>
+      <div id="alert" class="alert alert-warning group" role="alert" hidden>
+        We are sorry but there are no events at this time. Please check back later.
+      </div>
+      <ul id="events" class="list-group list-group-flush list text-center group" hidden>
+      </ul>
+    </div>
+
+    <!-- JQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.15.0/umd/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
+    <script>
+      let lookUpMap = new Map();
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          let data = Papa.parse(this.responseText);
+          parseJson(data);
+        }
+      };
+      xhttp.open("GET", "https://docs.google.com/spreadsheets/d/1HBIvvi1AF_F4sz3Fh_68Q9Q2lFTpfGunaevw5EnwQeI/export?format=csv&id=1HBIvvi1AF_F4sz3Fh_68Q9Q2lFTpfGunaevw5EnwQeI&gid=1283437666", true);
+      xhttp.send();
+
+      function parseJson(json) {
+        let zipCodeEvents = json.data;
+        zipCodeEvents.splice(0,2);
+        for(let events of zipCodeEvents ){
+          let zipCode = events[0];
+          let link = events[1];
+          let eventLinks = [];
+          if (!lookUpMap.has(zipCode)) {
+            eventLinks.push(link);
+            lookUpMap.set(zipCode, eventLinks);
+          } else {
+            let eventLinks = lookUpMap.get(zipCode);
+            if(!eventLinks.includes(link)) {
+              eventLinks.push(link);
+              lookUpMap.set(zipCode, eventLinks);
+            }
+          }
+        }
+      }
+
+      function removeEvents() {
+        let events = document.getElementById("events");
+        while(events.firstChild) {
+          events.removeChild(events.firstChild);
+        }
+      }
+
+      function addEvents(eventLinks) {
+        for (let eventLink of eventLinks) {
+          let events = document.getElementById("events");
+          events.removeAttribute("hidden");
+          let link = document.createElement("a");
+          link.setAttribute("href", eventLink);
+          link.appendChild(document.createTextNode(eventLink));
+          let li = document.createElement("li");
+          li.appendChild(link);
+          li.setAttribute("class", "list-group-item text-truncate");
+          events.appendChild(li);
+        }
+      }
+
+      function findEvents(zipCode) {
+        if(lookUpMap.has(zipCode)){
+          let eventLinks = lookUpMap.get(zipCode);
+          removeEvents();
+          let alert = document.getElementById("alert");
+          alert.setAttribute("hidden", "");
+          let events = document.getElementById("events");
+          events.setAttribute("hidden", "");
+          addEvents(eventLinks);
+        } else {
+          removeEvents();
+          let alert = document.getElementById("alert");
+          alert.removeAttribute("hidden", "");
+        }
+      }
+
+      let input = document.getElementById("zipcode");
+      input.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+          let value = input.value;
+          input.value = "";
+          findEvents(value);
+        }
+      });
+
+    </script>
+
+  </body>
+</html>
+
